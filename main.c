@@ -62,6 +62,12 @@ int main(int argc, char** argv) {
 
     for (k = 0; k < n; k++) {
         root = k/chunksize;
+
+        for (i = 0; i < chunksize; i++) {
+            int ktrunc = k%chunksize; // an adaptation of k truncated to chunk
+            rowchunk[i] = Wo[chunksize*ktrunc+i];
+            colchunk[i] = Wo[chunksize*i+ktrunc];
+        }
 #ifdef DEBUG
         //fprintf(stderr,"%d: k %d\troot %d\n",
         //        rank,root);
