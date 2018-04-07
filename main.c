@@ -57,15 +57,18 @@ int main(int argc, char** argv) {
     rowchunk = (int*) calloc(chunksize,sizeof(int));
 
     for (k = 0; k < n; k++) {
+        MPI_Bcast(colchunk,chunksize,MPI_Int,(int)(k/(n/sqrt(p))));
+        MPI_Bcast(rowchunk,chunksize,MPI_Int,(int)(k/(n/sqrt(p))));
         for (i = 0; i < chunksize; i++) {
             for (j = 0; j < chunksize; j++) {
-                W[n*i+j] = min( Wo[n*i+j], Wo[n*i+k] + Wo[n*k+j]);
+                //W[n*i+j] = min( Wo[n*i+j], Wo[n*i+k] + Wo[n*k+j]);
+                W[chunksize*i+j] = min( Wo[chunksize*i+j], colchunk[i] + rowchunk[j]);
             }
         }
 
         for (i = 0; i < chunksize; i++) {
             for (j = 0; j < chunksize; j++) {
-                Wo[n*i+j] = W[n*i+j];
+                Wo[chunksize*i+j] = W[chunksize*i+j];
             }
         }
     }
