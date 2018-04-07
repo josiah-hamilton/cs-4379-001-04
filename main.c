@@ -7,7 +7,7 @@
 #include "graph.h"
 
 #ifndef NODES
-    #define NODES 3
+    #define NODES 243
 #endif
 
 #ifndef MAXWEIGHT
@@ -19,19 +19,29 @@
 
 
 int main(int argc, char** argv) {
-    int n = NODES, chunksize;
+    int n = NODES, colorsize, chunksize;
     int i, j, k;
     int *Wo, *W, *colchunk, *rowchunk;
-    int rank, rowrank, colrank;
+    int rank,rowrank,colrank,rowcolor,colcolor,root;
     int size, rowsize, colsize;
     MPI_Status status;
     MPI_Comm rowcomm, colcomm;
+
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
     MPI_Comm_size(MPI_COMM_WORLD,&size);
     chunksize = n / (int)sqrt(size);
-    MPI_Comm_split(MPI_COMM_WORLD,(int)(rank/chunksize),rank,&rowcomm);
-    MPI_Comm_split(MPI_COMM_WORLD,(int)(rank%chunksize),rank,&colcomm);
+    colorsize = (int)sqrt(size);
+    rowcolor = rank/colorsize;
+    colcolor = rank%colorsize;
+    MPI_Comm_split(MPI_COMM_WORLD,rowcolor,rank,&rowcomm);
+    MPI_Comm_split(MPI_COMM_WORLD,colcolor,rank,&colcomm);
+    MPI_Comm_rank(rowcomm,&rowrank); MPI_Comm_rank(colcomm,&colrank);
+#ifdef DEBUG
+    // rowcolor should match colrank, and visa-versa
+    fprintf(stderr,"%d: nodes %d\tchunksize %d\trowcolor %d\trowrank %d\tcolcolor %d\tcolrank %d\n",
+            rank,n,chunksize,rowcolor,rowrank,colcolor,colrank);
+#endif
 
 #ifdef FULLGEN
     Wo = (int*) calloc(n*n, sizeof(int));
@@ -51,8 +61,13 @@ int main(int argc, char** argv) {
     rowchunk = (int*) calloc(chunksize,sizeof(int));
 
     for (k = 0; k < n; k++) {
-        MPI_Bcast(colchunk,chunksize,MPI_INT,(int)(k/chunksize),colcomm);
-        MPI_Bcast(rowchunk,chunksize,MPI_INT,(int)(k/chunksize),rowcomm);
+        root = k/chunksize;
+#ifdef DEBUG
+        //fprintf(stderr,"%d: k %d\troot %d\n",
+        //        rank,root);
+#endif
+        MPI_Bcast(colchunk,chunksize,MPI_INT,root,colcomm);
+        MPI_Bcast(rowchunk,chunksize,MPI_INT,root,rowcomm);
         for (i = 0; i < chunksize; i++) {
             for (j = 0; j < chunksize; j++) {
                 //W[n*i+j] = min( Wo[n*i+j], Wo[n*i+k] + Wo[n*k+j]);
