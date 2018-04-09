@@ -7,7 +7,7 @@
 #include "graph.h"
 
 #ifndef NODES
-    #define NODES 243
+    #define NODES 9
 #endif
 
 #ifndef MAXWEIGHT
@@ -56,6 +56,10 @@ int main(int argc, char** argv) {
 #else
     Wo = (int*) calloc(chunksize*chunksize,sizeof(int));
     W  = (int*) calloc(chunksize*chunksize,sizeof(int));
+    matrixsynth(Wo, chunksize, time(NULL), MAXWEIGHT);
+    for (i = 0; i < chunksize*chunksize; i++) {
+        W[i] = 0;
+    }
 #endif
     colchunk = (int*) calloc(chunksize,sizeof(int));
     rowchunk = (int*) calloc(chunksize,sizeof(int));
@@ -69,8 +73,9 @@ int main(int argc, char** argv) {
             colchunk[i] = Wo[chunksize*i+ktrunc];
         }
 #ifdef DEBUG
-        //fprintf(stderr,"%d: k %d\troot %d\n",
-        //        rank,root);
+        fprintf(stderr,"%d: k %d\troot %d\n",
+                rank,k,root);
+        printgraph(W,chunksize);
 #endif
         MPI_Bcast(colchunk,chunksize,MPI_INT,root,colcomm);
         MPI_Bcast(rowchunk,chunksize,MPI_INT,root,rowcomm);
